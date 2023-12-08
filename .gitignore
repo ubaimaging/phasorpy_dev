@@ -15,6 +15,7 @@ tutorials/data/*
 *.ptu
 *.lnk
 .DS_Store
+phasorpy-dev
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
