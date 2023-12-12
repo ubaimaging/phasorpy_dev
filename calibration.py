@@ -34,35 +34,19 @@ def calibration_factor(calibration_image, reference, freq):
     phi = np.arctan(omega * reference_tau)
     reference_g = M * np.cos(phi)
     reference_s = M * np.sin(phi)
-    # reference_g = 1 / (1 + np.power(omega * reference_tau, 2))
-    # reference_s = omega * reference_tau / (1 + np.power(omega * reference_tau, 2))
     # Get correction factor according to reference and calculated centroid from data
     centroids = centroid(g,s)
     g_correction_factor = reference_g - centroids[0] # Reference - centroid
     s_correction_factor = reference_s - centroids[1] # Reference - centroid
     return g_correction_factor, s_correction_factor
-    # phi_given = np.arctan(centroids[1] / centroids[0])
-    # m_given = np.sqrt(centroids[0] ** 2 + centroids[1] ** 2)
-    # if centroids[0] < 0:
-    #     theta_correction = phi - np.pi - phi_given
-    # else:
-    #     theta_correction = phi - phi_given
-    # m_correction = M / m_given
-    # return theta_correction, m_correction
+
 
 def apply_calibration(image, calibration_image, reference, freq):
     g_correction_factor, s_correction_factor = calibration_factor(calibration_image, reference, freq)
-    # theta_correction, m_correction = calibration_factor(calibration_image, reference, freq)
     # Calculate g and s
     dc, g, s, md, ph = np.asarray(hsitools.phasor(image))
     g_calibrated = g + g_correction_factor
     s_calibrated = s + s_correction_factor
-    # md = np.sqrt(g**2+s**2)*m_correction
-    # ph = np.arctan(s/g)+theta_correction
-    # md = md*m_correction
-    # ph = ph + theta_correction 
-    # g_calibrated = md*np.cos(ph)
-    # s_calibrated = md*np.sin(ph)
     return dc, g_calibrated, s_calibrated
 
 #%%
@@ -84,11 +68,11 @@ hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3,
 #                                 hsi_stack=image, lamd=np.linspace(418, 718, 30))
 
 #%%
-# calibration = '/Volumes/JD Drive/Data_dem_workshop/Data_11-23/coumarin6_000$EI0S.fbd'
-# calibration = '/Volumes/JD Drive/Data_dem_workshop/Data_11-23/RH110CALIBRATION_000$EI0S.fbd'
-# convallaria = '/Volumes/JD Drive/Data_dem_workshop/Data_11-23/convallaria_000$EI0S.fbd'
-calibration = '/Volumes/JD Drive/Data_dem_workshop/Nov15_23/10x800n764uP13RHO110_111$EI0S.fbd'
-convallaria = '/Volumes/JD Drive/Data_dem_workshop/Nov15_23/10x800n764uP6convallaria_000$EI0S.fbd'
+calibration = 'test-data/FBDfiles-DIVER/Data_11-23/coumarin6_000$EI0S.fbd'
+# calibration = 'test-data/FBDfiles-DIVER/Data_11-23/RH110CALIBRATION_000$EI0S.fbd'
+convallaria = 'test-data/FBDfiles-DIVER/Data_11-23/convallaria_000$EI0S.fbd'
+# calibration = 'test-data/FBDfiles-DIVER/Nov15_23/10x800n764uP13RHO110_111$EI0S.fbd'
+# convallaria = 'test-data/FBDfiles-DIVER/Nov15_23/10x800n764uP6convallaria_000$EI0S.fbd'
 with lfd.SimfcsFbd(calibration) as cal, lfd.SimfcsFbd(convallaria) as conv:
     bins_times_markers = cal.decode()
     frames_cal = cal.frames(bins_times_markers)
@@ -101,7 +85,7 @@ with lfd.SimfcsFbd(calibration) as cal, lfd.SimfcsFbd(convallaria) as conv:
     conv_image = conv_image[0,0,:,:,:]
     conv_image = np.transpose(conv_image, (2, 0, 1))
 
-    dc, g_calibrated, s_calibrated = apply_calibration(image = conv_image, calibration_image = cal_image, reference = 'rhodamine_110', freq = 80)
+    dc, g_calibrated, s_calibrated = apply_calibration(image = cal_image, calibration_image = cal_image, reference = 'coumarin_6', freq = 80)
     # dc, g_calibrated, s_calibrated, _ , _ = hsitools.phasor(image)
     hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3, nfilt=3,filt=True, spectrums=False,
                                 hsi_stack=conv_image, lamd=np.linspace(418, 718, 30),flim=True)
