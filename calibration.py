@@ -2,7 +2,7 @@
 import tifffile
 import numpy as np
 import matplotlib
-# matplotlib.use('TKAgg')
+# matplotlib.use('GTK4Agg')
 import hsitools 
 import hsi_visualization 
 import os
@@ -11,6 +11,7 @@ import lfdfiles as lfd
 import json
 from src.phasorpy import io
 from sklearn.cluster import KMeans
+import ptufile as pq
 #%%
 def centroid(g,s):
     x = g.flatten()
@@ -44,6 +45,8 @@ def calibration_factor(calibration_image, reference, freq):
 def apply_calibration(image, calibration_image, reference, freq):
     g_correction_factor, s_correction_factor = calibration_factor(calibration_image, reference, freq)
     # Calculate g and s
+    print(g_correction_factor)
+    print(s_correction_factor)
     dc, g, s, md, ph = np.asarray(hsitools.phasor(image))
     g_calibrated = g + g_correction_factor
     s_calibrated = s + s_correction_factor
@@ -85,8 +88,60 @@ with lfd.SimfcsFbd(calibration) as cal, lfd.SimfcsFbd(convallaria) as conv:
     conv_image = conv_image[0,0,:,:,:]
     conv_image = np.transpose(conv_image, (2, 0, 1))
 
-    dc, g_calibrated, s_calibrated = apply_calibration(image = cal_image, calibration_image = cal_image, reference = 'coumarin_6', freq = 80)
+    dc, g_calibrated, s_calibrated = apply_calibration(image = conv_image, calibration_image = cal_image, reference = 'coumarin_6', freq = 80)
     # dc, g_calibrated, s_calibrated, _ , _ = hsitools.phasor(image)
     hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3, nfilt=3,filt=True, spectrums=False,
                                 hsi_stack=conv_image, lamd=np.linspace(418, 718, 30),flim=True)
+# %%
+ptu_file_path = 'test-data/ptu_files/coumarin_calib_001.ptu'
+ptu_file = pq.PtuFile(ptu_file_path)
+ptu_image = pq.imread(ptu_file_path)
+#%%
+import matplotlib.pyplot as plt
+pixel_x = 512
+pixel_y = 512
+sums = np.sum(ptu_image, axis=(1, 2,3))
+# Create an array for x values (e.g., the indices in the last dimension)
+x_values = np.arange(ptu_image.shape[0])
+# Extract values for the chosen pixel across time frames
+pixel_values = ptu_image[0, :, pixel_y, pixel_x, 0]
+# Create a scatter plot
+time_frames = range(1, 20)  # Assuming time frames are 1-indexed
+# Plot the summed data
+plt.plot(np.arange(sums.shape[1]), sums[0])
+plt.xlabel('Time Frame')
+plt.ylabel('Summed Value')
+plt.title('Summed Values Across Time Frames')
+plt.show()
+# %%
+arr_summed = np.sum(ptu_image, axis=(0, 1))
+arr_summed_transposed = np.transpose(arr_summed, (2, 0, 1))
+
+#%%
+dc, g_calibrated, s_calibrated = apply_calibration(image = arr_summed_transposed, calibration_image = arr_summed_transposed, reference = 'coumarin_6', freq = 80)
+# dc, g_calibrated, s_calibrated = apply_calibration(image = image, calibration_image = calibration_image, reference = 'coumarin_6', freq = 62.5)
+hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3, nfilt=3,filt=True, spectrums=False,
+                                hsi_stack=arr_summed_transposed, lamd=np.linspace(418, 718, 30),flim=True)
+# %%
+
+import matplotlib.pyplot as plt
+calibration = 'test-data/FBDfiles-DIVER/Data_11-23/coumarin6_000$EI0S.fbd'
+# calibration = 'test-data/FBDfiles-DIVER/Data_11-23/RH110CALIBRATION_000$EI0S.fbd'
+convallaria = 'test-data/FBDfiles-DIVER/Data_11-23/convallaria_000$EI0S.fbd'
+calibration = 'test-data/FBDfiles-DIVER/Data_11-23/convallaria_000$EI0S.fbd'
+# calibration = 'test-data/FBDfiles-DIVER/Nov15_23/10x800n764uP13RHO110_111$EI0S.fbd'
+# convallaria = 'test-data/FBDfiles-DIVER/Nov15_23/10x800n764uP6convallaria_000$EI0S.fbd'
+with lfd.SimfcsFbd(calibration) as cal:
+    bins_times_markers = cal.decode()
+    frames_cal = cal.frames(bins_times_markers)
+    cal_image = cal.asimage(bins_times_markers, frames_cal)
+    cal_image = cal_image[0,0,:,:,:]
+    cal_image = np.transpose(cal_image, (2, 0, 1))
+    sum_per_frame = np.sum(cal_image, axis=(1, 2))
+    # Plot the results
+    plt.plot(sum_per_frame)
+    plt.xlabel('Frame')
+    plt.ylabel('Sum of elements')
+    plt.title('Sum of elements for each frame')
+    plt.show()
 # %%
