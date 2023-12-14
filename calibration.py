@@ -2,7 +2,7 @@
 import tifffile
 import numpy as np
 import matplotlib
-# matplotlib.use('GTK4Agg')
+# matplotlib.use('MacOSX')
 import hsitools 
 import hsi_visualization 
 import os
@@ -93,35 +93,40 @@ with lfd.SimfcsFbd(calibration) as cal, lfd.SimfcsFbd(convallaria) as conv:
     hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3, nfilt=3,filt=True, spectrums=False,
                                 hsi_stack=conv_image, lamd=np.linspace(418, 718, 30),flim=True)
 # %%
-ptu_file_path = 'test-data/ptu_files/coumarin_calib_001.ptu'
-ptu_file = pq.PtuFile(ptu_file_path)
-ptu_image = pq.imread(ptu_file_path)
-#%%
-import matplotlib.pyplot as plt
-pixel_x = 512
-pixel_y = 512
-sums = np.sum(ptu_image, axis=(1, 2,3))
-# Create an array for x values (e.g., the indices in the last dimension)
-x_values = np.arange(ptu_image.shape[0])
-# Extract values for the chosen pixel across time frames
-pixel_values = ptu_image[0, :, pixel_y, pixel_x, 0]
-# Create a scatter plot
-time_frames = range(1, 20)  # Assuming time frames are 1-indexed
+#CALIBRATION OF PTU FILES
+calib_ptu_file_path = 'test-data/ptu_files/coumarin_calib_001.ptu'
+calib_ptu_file = pq.PtuFile(calib_ptu_file_path)
+calib_ptu_image = pq.imread(calib_ptu_file_path)
+calib_ptu_image_sliced = calib_ptu_image[0,:,:,0,:]
 # Plot the summed data
-plt.plot(np.arange(sums.shape[1]), sums[0])
-plt.xlabel('Time Frame')
-plt.ylabel('Summed Value')
-plt.title('Summed Values Across Time Frames')
+calib_ptu_image_time = np.transpose(calib_ptu_image_sliced, (2, 0, 1))
+calib_sum_per_frame = np.sum(calib_ptu_image_time, axis=(1, 2))
+# Plot the results
+plt.plot(calib_sum_per_frame)
+plt.xlabel('Frame')
+plt.ylabel('Sum of elements')
+plt.title('Sum of elements for each frame')
 plt.show()
-# %%
-arr_summed = np.sum(ptu_image, axis=(0, 1))
-arr_summed_transposed = np.transpose(arr_summed, (2, 0, 1))
 
-#%%
-dc, g_calibrated, s_calibrated = apply_calibration(image = arr_summed_transposed, calibration_image = arr_summed_transposed, reference = 'coumarin_6', freq = 80)
+img_ptu_file_path = 'test-data/ptu_files/noCaprida_flim_control_.ptu'
+img_ptu_file = pq.PtuFile(img_ptu_file_path)
+img_ptu_image = pq.imread(img_ptu_file_path)
+img_ptu_image_sliced = img_ptu_image[0,:,:,0,:]
+# Plot the summed data
+img_ptu_image_time = np.transpose(img_ptu_image_sliced, (2, 0, 1))
+img_sum_per_frame = np.sum(img_ptu_image_time, axis=(1, 2))
+# Plot the results
+plt.plot(img_sum_per_frame)
+plt.xlabel('Frame')
+plt.ylabel('Sum of elements')
+plt.title('Sum of elements for each frame')
+plt.show()
+
+
+dc, g_calibrated, s_calibrated = apply_calibration(image = img_ptu_image_time, calibration_image = calib_ptu_image_time, reference = 'coumarin_6', freq = 80)
 # dc, g_calibrated, s_calibrated = apply_calibration(image = image, calibration_image = calibration_image, reference = 'coumarin_6', freq = 62.5)
 hsi_visualization.interactive3(dc, g_calibrated, s_calibrated, 0.15, 8, ncomp=3, nfilt=3,filt=True, spectrums=False,
-                                hsi_stack=arr_summed_transposed, lamd=np.linspace(418, 718, 30),flim=True)
+                                hsi_stack=img_ptu_image_time, lamd=np.linspace(418, 718, 30),flim=True)
 # %%
 
 import matplotlib.pyplot as plt
